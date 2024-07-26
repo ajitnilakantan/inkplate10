@@ -10,8 +10,10 @@
     - [Quick start](https://docs.platformio.org/en/latest/integration/ide/vscode.html#quick-start)
 
 - Build (Ctrl-Alt-b)
+  <!--  ~\.platformio\penv\Scripts\platformio.exe run  -->
 
 - Upload to the board (LHS PlatformIO icon in VSCode / esp32 / General / Upload)
+  <!-- ~\.platformio\penv\Scripts\platformio.exe run --target upload --environment esp32 -->
 
 - Notes:
   - In "platform.ini" add -DARDUINO_INKPLATE10 or -DARDUINO_INKPLATE10V2 to "build_flags" depending on which version of the board you have

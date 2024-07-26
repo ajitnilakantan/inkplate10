@@ -20,12 +20,8 @@ extern void shuffleIndex();
 #define BATTERY_WARNING_LEVEL 3.7
 
 const char *PHOTOS_FOLDER = "/images";
-// #define uS_TO_SLEEP 10800000000 // 3h
-// #define uS_TO_SLEEP 5400000000 //1.5h
-#define uS_TO_SLEEP 2700000000 // 45m
-// #define uS_TO_SLEEP 20000000 // 10s
-//  #define uS_TO_SLEEP 10000000 // 5s
-//  #define uS_TO_SLEEP 3600000000 // 1h
+#define uS_TO_SLEEP (60000000ULL * 60ULL * 5ULL) // 5h
+#define uS_TO_SLEEP_DELTA (60000000ULL * 30ULL)  // ±30 min randomized
 
 /*
 ** Perist this to EEPROM
@@ -54,7 +50,8 @@ void gotoSleep()
     // Turn off the power supply for the SD card
     display.sdCardSleep();
     // Isolate/disable GPIO12 on ESP32 (only to reduce power consumption in sleep)
-    esp_sleep_enable_timer_wakeup(uS_TO_SLEEP); // Activate wake-up timer
+    unsigned long long us_to_sleep = uS_TO_SLEEP + (uS_TO_SLEEP_DELTA - random(0, 2 * uS_TO_SLEEP_DELTA));
+    esp_sleep_enable_timer_wakeup(us_to_sleep); // Activate wake-up timer
     // Enable wakeup from deep sleep on gpio 36 (wake button)
     esp_sleep_enable_ext0_wakeup(GPIO_NUM_36, LOW);
     // Put ESP32 into deep sleep. Program stops here.
@@ -182,7 +179,6 @@ void buildIndex()
 void shuffleIndex()
 {
     // Fisher Yates
-    randomSeed(millis());
     for (uint16_t i = 0; i < photoCount - 2; i++)
     {
         // i <= j < n
@@ -286,8 +282,31 @@ void checkBattery()
     }
 }
 
+// https://forum.arduino.cc/t/the-reliable-but-not-very-sexy-way-to-seed-random/65872/36
+unsigned long seedOut(unsigned int noOfBits)
+{
+    // return value with 'noOfBits' random bits set
+    unsigned long seed = 0, limit = 99;
+    int bit0 = 0, bit1 = 0;
+    while (noOfBits--)
+    {
+        for (int i = 0; i < limit; ++i)
+        {
+            bit0 = analogRead(0) & 1;
+            bit1 = analogRead(0) & 1;
+            if (bit1 != bit0)
+                break;
+        }
+        seed = (seed << 1) | bit1;
+    }
+    return seed;
+}
+
 void setup()
 {
+    // randomSeed(millis());
+    randomSeed(seedOut(32));
+
     Serial.begin(115200);
     while (!Serial)
     {
